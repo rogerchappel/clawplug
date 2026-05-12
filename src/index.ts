@@ -32,6 +32,8 @@ export interface PluginEntry<Config> {
   configSchema: ConfigSections;
   hooks: PluginHooks<Config>;
   tools: Array<PluginTool<unknown, Config>>;
+  /** Register all tools with the host, wrapping execute() with result formatting. */
+  register(api: { registerTool: (tool: PluginTool<unknown, Config>) => void }, config: Config): Promise<void> | void;
 }
 
 export interface OpenClawResult {
@@ -41,18 +43,53 @@ export interface OpenClawResult {
 export function definePlugin<const Config extends ConfigSections>(definition: PluginDefinition<Config>) {
   return function createEntry(): PluginEntry<InferConfig<Config>> {
     const tool = <Params>(toolDefinition: PluginTool<Params, InferConfig<Config>>) => toolDefinition as PluginTool<unknown, InferConfig<Config>>;
+    const rawTools = definition.tools(tool);
+
+    // Task 1.3 — register() wraps each tool's execute with automatic result formatting
+    const register = (
+      api: { registerTool: (tool: PluginTool<unknown, InferConfig<Config>>) => void },
+      config: InferConfig<Config>,
+    ) => {
+      for (const rawTool of rawTools) {
+        api.registerTool({
+          name: rawTool.name,
+          description: rawTool.description,
+          parameters: rawTool.parameters,
+          execute: async (params, cfg) => {
+            // Task 1.4 — onToolCall hook fires before execution
+            await definition.hooks?.onToolCall?.(rawTool.name, params, cfg);
+            try {
+              const result = await rawTool.execute(params as never, cfg);
+              return formatResult(result);
+            } catch (err) {
+              // Task 1.4 — onError hook fires on failure
+              await definition.hooks?.onError?.(rawTool.name, err, cfg);
+              throw err;
+            }
+          },
+        });
+      }
+    };
+
     return {
       id: definition.id,
       name: definition.name,
       description: definition.description,
       configSchema: definition.configSchema,
       hooks: definition.hooks ?? {},
-      tools: definition.tools(tool),
+      tools: rawTools,
+      register,
     };
   };
 }
 
-export function wrapResult(value: unknown): OpenClawResult {
+/**
+ * Format a plain result object into the OpenClaw protocol format.
+ * Plugin authors return any serialisable value from execute(); this
+ * normalises it to the `{ content: [{ type: 'text', text: ... }] }`
+ * shape expected by the OpenClaw gateway.
+ */
+export function formatResult(value: unknown): OpenClawResult {
   return {
     content: [
       {
@@ -62,3 +99,6 @@ export function wrapResult(value: unknown): OpenClawResult {
     ],
   };
 }
+
+/** @deprecated Use formatResult instead. Kept for backward compatibility. */
+export const wrapResult = formatResult;
