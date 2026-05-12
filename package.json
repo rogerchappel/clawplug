@@ -1,0 +1,42 @@
+{
+  "name": "clawplug",
+  "version": "0.1.0",
+  "description": "OpenClaw plugin SDK for typed plugin tools, config, lifecycle hooks, and testing.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./test": "./dist/test.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "openclaw",
+    "plugins",
+    "typescript"
+  ],
+  "author": "Roger Chappel",
+  "license": "MIT",
+  "dependencies": {
+    "@sinclair/typebox": "^0.34.49"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsup": "^8.5.1",
+    "typescript": "^5.7.3",
+    "vitest": "^3.2.4",
+    "@sinclair/typebox": "^0.34.49"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
