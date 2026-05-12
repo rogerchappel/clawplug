@@ -27,14 +27,16 @@
   "author": "Roger Chappel",
   "license": "MIT",
   "dependencies": {
-    "@sinclair/typebox": "^0.34.49"
+    "@sinclair/typebox": "^0.34.49",
+    "commander": "^14.0.3"
   },
   "devDependencies": {
+    "@sinclair/typebox": "^0.34.49",
+    "@types/commander": "^2.12.0",
     "@types/node": "^22.10.2",
     "tsup": "^8.5.1",
     "typescript": "^5.7.3",
-    "vitest": "^3.2.4",
-    "@sinclair/typebox": "^0.34.49"
+    "vitest": "^3.2.4"
   },
   "engines": {
     "node": ">=20"

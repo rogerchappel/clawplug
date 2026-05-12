@@ -85,9 +85,9 @@ describe('register + lifecycle hooks', () => {
       description: 'Tests lifecycle hooks.',
       configSchema: {},
       hooks: {
-        onLoad: () => order.push('onLoad'),
-        onToolCall: (name) => order.push(`onToolCall:${name}`),
-        onError: () => order.push('onError'),
+        onLoad: () => { order.push('onLoad'); },
+        onToolCall: (name) => { order.push(`onToolCall:${name}`); },
+        onError: () => { order.push('onError'); },
       },
       tools: (tool) => [
         tool({
