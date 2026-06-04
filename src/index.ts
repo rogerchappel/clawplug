@@ -44,13 +44,18 @@ export interface PluginTool<Params, Config> {
   execute(params: Params, config: Config): Promise<unknown> | unknown;
 }
 
+/** Lifecycle hook that may perform side effects. Return value is ignored. */
+type HookFn<Config, Args extends unknown[]> =
+  | ((...args: Args) => void)
+  | ((...args: Args) => Promise<void>);
+
 export interface PluginHooks<Config> {
   /** Called once when the plugin is loaded — validate connectivity, warm caches. */
-  onLoad?: (config: Config) => Promise<void> | void;
+  onLoad?: HookFn<Config, [config: Config]>;
   /** Fires before each tool call — logging, rate limiting, auth checks. */
-  onToolCall?: (toolName: string, params: unknown, config: Config) => Promise<void> | void;
+  onToolCall?: HookFn<Config, [toolName: string, params: unknown, config: Config]>;
   /** Fires on execute errors — logging, retries, graceful degradation. */
-  onError?: (toolName: string, error: unknown, config: Config) => Promise<void> | void;
+  onError?: HookFn<Config, [toolName: string, error: unknown, config: Config]>;
 }
 
 export interface PluginDefinition<S extends ConfigSchema> {
@@ -95,8 +100,6 @@ export function definePlugin<const S extends ConfigSchema>(definition: PluginDef
       ? { _default: (definition.configSchema as FlatConfigSchema).schema }
       : definition.configSchema as ConfigSections;
 
-    // Task 1.3 — register() wraps execute() with automatic formatResult()
-    // Task 1.4 — lifecycle hooks fire before/after execute()
     const register = (
       api: { registerTool: (tool: PluginTool<unknown, ResolveConfig<S>>) => void },
       config: ResolveConfig<S>,
@@ -107,7 +110,7 @@ export function definePlugin<const S extends ConfigSchema>(definition: PluginDef
           description: rawTool.description,
           parameters: rawTool.parameters,
           execute: async (params, cfg) => {
-            definition.hooks?.onToolCall?.(rawTool.name, params, cfg);
+            definition.hooks?.onToolCall?.(rawTool.name, params as unknown, cfg);
             try {
               const result = await rawTool.execute(params as never, cfg);
               return formatResult(result);
