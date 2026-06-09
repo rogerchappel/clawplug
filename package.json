@@ -12,13 +12,17 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "SECURITY.md",
+    "CONTRIBUTING.md"
   ],
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "package:smoke": "npm pack --dry-run",
+    "release:check": "npm run check && npm test && npm run build && npm run package:smoke"
   },
   "keywords": [
     "openclaw",
@@ -27,6 +31,14 @@
   ],
   "author": "Roger Chappel",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rogerchappel/clawplug.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rogerchappel/clawplug/issues"
+  },
+  "homepage": "https://github.com/rogerchappel/clawplug#readme",
   "dependencies": {
     "@sinclair/typebox": "^0.34.49"
   },
