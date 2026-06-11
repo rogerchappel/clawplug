@@ -18,3 +18,16 @@ Small, focused pull requests are preferred. Run `npm run release:check` before s
 ## Security
 
 If you find a vulnerability, follow [SECURITY.md](SECURITY.md).
+
+## Development
+
+Run the same checks locally before opening a change:
+
+```sh
+npm ci
+npm run check
+npm run build
+npm test
+npm run package:smoke
+npm run release:check
+```
