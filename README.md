@@ -127,3 +127,12 @@ If you find a vulnerability, follow [SECURITY.md](SECURITY.md).
 
 Small, focused pull requests are preferred. Include the verification commands
 you ran in the PR body.
+
+## Release Verification
+
+Before publishing or tagging a release, run the same verification path used by CI:
+
+- `npm run release:check`
+- `npm run package:smoke`
+
+See `docs/release-readiness.md` for the package surface, CLI bins, and reviewer checklist.
