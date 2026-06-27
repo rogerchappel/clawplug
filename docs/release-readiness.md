@@ -7,6 +7,8 @@ Use this checklist before publishing, tagging, or asking reviewers to trust the 
 - Package: `clawplug`
 - Repository: `https://github.com/rogerchappel/clawplug`
 - Pack contents are constrained by the `files` allowlist in `package.json`.
+- Copyable author examples under `examples/` are intentionally included in the
+  published package.
 
 ## CLI Surface
 
