@@ -60,6 +60,9 @@ Tool results are normalized to the OpenClaw content shape:
 }
 ```
 
+The same example is available as a copyable file at
+[`examples/hello-plugin.ts`](examples/hello-plugin.ts).
+
 ## Config Shapes
 
 `configSchema` supports named sections:
