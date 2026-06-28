@@ -1,5 +1,10 @@
 # Changelog
 
+## Next
+
+- Documented SDK limitations around host responsibilities, credential handling,
+  network access, and in-process test helper coverage.
+
 ## 0.1.0
 
 - Initial OpenClaw plugin SDK for typed tool definitions, plugin metadata, lifecycle hooks, and test helpers.
