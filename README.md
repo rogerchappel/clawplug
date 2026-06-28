@@ -122,6 +122,17 @@ npm run release:check
 The release gate type-checks source, runs the Vitest suite, builds `dist`, and
 checks the dry-run package contents.
 
+## Limitations
+
+- `clawplug` defines SDK primitives and test helpers. It does not provide a
+  standalone OpenClaw host, plugin registry, credential store, or deployment
+  service.
+- TypeBox schemas describe plugin config and tool parameters, but host
+  applications are still responsible for validating secrets, enforcing
+  permissions, and controlling network access.
+- The test helper exercises plugin tools in process. It is useful for unit and
+  fixture tests, not a replacement for an end-to-end host integration test.
+
 ## Security
 
 If you find a vulnerability, follow [SECURITY.md](SECURITY.md).
