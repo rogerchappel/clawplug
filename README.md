@@ -63,6 +63,10 @@ Tool results are normalized to the OpenClaw content shape:
 The same example is available as a copyable file at
 [`examples/hello-plugin.ts`](examples/hello-plugin.ts).
 
+For a social-account workflow that prepares evidence for review before any
+publishing step, see
+[`examples/tweetclaw-source-review-plugin.ts`](examples/tweetclaw-source-review-plugin.ts).
+
 ## Config Shapes
 
 `configSchema` supports named sections:
