@@ -110,12 +110,12 @@ export function definePlugin<const S extends ConfigSchema>(definition: PluginDef
           description: rawTool.description,
           parameters: rawTool.parameters,
           execute: async (params, cfg) => {
-            definition.hooks?.onToolCall?.(rawTool.name, params as unknown, cfg);
+            await definition.hooks?.onToolCall?.(rawTool.name, params as unknown, cfg);
             try {
               const result = await rawTool.execute(params as never, cfg);
               return formatResult(result);
             } catch (err) {
-              definition.hooks?.onError?.(rawTool.name, err, cfg);
+              await definition.hooks?.onError?.(rawTool.name, err, cfg);
               throw err;
             }
           },

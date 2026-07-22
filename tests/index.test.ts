@@ -77,7 +77,7 @@ describe('formatResult', () => {
 });
 
 describe('register + lifecycle hooks', () => {
-  it('hooks fire in the correct order', async () => {
+  it('awaits hooks in the correct order', async () => {
     const order: string[] = [];
     const createEntry = definePlugin({
       id: 'hooked',
@@ -86,8 +86,16 @@ describe('register + lifecycle hooks', () => {
       configSchema: {},
       hooks: {
         onLoad: () => order.push('onLoad'),
-        onToolCall: (name) => order.push(`onToolCall:${name}`),
-        onError: () => order.push('onError'),
+        onToolCall: async (name) => {
+          order.push(`onToolCall:${name}:start`);
+          await Promise.resolve();
+          order.push(`onToolCall:${name}:end`);
+        },
+        onError: async () => {
+          order.push('onError:start');
+          await Promise.resolve();
+          order.push('onError:end');
+        },
       },
       tools: (tool) => [
         tool({
@@ -118,13 +126,56 @@ describe('register + lifecycle hooks', () => {
 
     // Call succeed
     const result = await registered.greet({});
-    expect(order).toContain('onToolCall:greet');
-    expect(order).toContain('execute');
+    expect(order).toEqual([
+      'onLoad',
+      'onToolCall:greet:start',
+      'onToolCall:greet:end',
+      'execute',
+    ]);
     expect((result as any).content[0]?.text).toBe('hi');
 
     // Call fail
     order.length = 0;
     await expect(registered.fail({})).rejects.toThrow('boom');
-    expect(order).toEqual(['onToolCall:fail', 'onError']);
+    expect(order).toEqual([
+      'onToolCall:fail:start',
+      'onToolCall:fail:end',
+      'onError:start',
+      'onError:end',
+    ]);
+  });
+
+  it('does not execute a tool when an async onToolCall hook rejects', async () => {
+    const hookError = new Error('not authorized');
+    let executed = false;
+    let invoke: (() => Promise<unknown>) | undefined;
+    const entry = definePlugin({
+      id: 'guarded',
+      name: 'Guarded Plugin',
+      description: 'Tests rejected pre-call hooks.',
+      configSchema: {},
+      hooks: {
+        onToolCall: async () => {
+          await Promise.resolve();
+          throw hookError;
+        },
+      },
+      tools: (tool) => [
+        tool({
+          name: 'protected',
+          description: 'Must not run.',
+          parameters: Type.Object({}),
+          execute: () => { executed = true; },
+        }),
+      ],
+    })();
+
+    await entry.register(
+      { registerTool: (tool) => { invoke = async () => tool.execute({}, {}); } },
+      {},
+    );
+
+    await expect(invoke?.()).rejects.toBe(hookError);
+    expect(executed).toBe(false);
   });
 });
