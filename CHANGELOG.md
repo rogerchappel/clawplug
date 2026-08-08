@@ -2,6 +2,8 @@
 
 ## Next
 
+- Refreshed the development dependency lockfile to resolve audited `nanoid` and
+  `postcss` vulnerabilities without changing the package manifest ranges.
 - Documented SDK limitations around host responsibilities, credential handling,
   network access, and in-process test helper coverage.
 
