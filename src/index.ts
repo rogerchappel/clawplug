@@ -50,7 +50,7 @@ type HookFn<Config, Args extends unknown[]> =
   | ((...args: Args) => Promise<void>);
 
 export interface PluginHooks<Config> {
-  /** Called once when the plugin is loaded — validate connectivity, warm caches. */
+  /** Called and awaited exactly once by register() before any tool can execute. */
   onLoad?: HookFn<Config, [config: Config]>;
   /** Fires before each tool call — logging, rate limiting, auth checks. */
   onToolCall?: HookFn<Config, [toolName: string, params: unknown, config: Config]>;
@@ -77,8 +77,8 @@ export interface PluginEntry<Config> {
   configSchema: ConfigSections;
   hooks: PluginHooks<Config>;
   tools: Array<PluginTool<unknown, Config>>;
-  /** Register all tools with the host, wrapping execute() with result formatting and lifecycle hooks. */
-  register(api: { registerTool: (tool: PluginTool<unknown, Config>) => void }, config: Config): Promise<void> | void;
+  /** Register tools and await the entry's one-time onLoad hook. */
+  register(api: { registerTool: (tool: PluginTool<unknown, Config>) => void }, config: Config): Promise<void>;
 }
 
 export interface OpenClawResult {
@@ -94,6 +94,11 @@ export function definePlugin<const S extends ConfigSchema>(definition: PluginDef
       def as PluginTool<unknown, ResolveConfig<S>>;
 
     const rawTools = definition.tools(tool);
+    let loadPromise: Promise<void> | undefined;
+    const ensureLoaded = (config: ResolveConfig<S>): Promise<void> => {
+      loadPromise ??= Promise.resolve().then(() => definition.hooks?.onLoad?.(config));
+      return loadPromise;
+    };
 
     // Normalise flat schemas into a single _default section for manifest generation
     const normalisedSchema = definition.configSchema && '$flat' in definition.configSchema
@@ -104,12 +109,14 @@ export function definePlugin<const S extends ConfigSchema>(definition: PluginDef
       api: { registerTool: (tool: PluginTool<unknown, ResolveConfig<S>>) => void },
       config: ResolveConfig<S>,
     ): Promise<void> => {
+      const loaded = ensureLoaded(config);
       for (const rawTool of rawTools) {
         api.registerTool({
           name: rawTool.name,
           description: rawTool.description,
           parameters: rawTool.parameters,
           execute: async (params, cfg) => {
+            await loaded;
             await definition.hooks?.onToolCall?.(rawTool.name, params as unknown, cfg);
             try {
               const result = await rawTool.execute(params as never, cfg);
@@ -121,7 +128,7 @@ export function definePlugin<const S extends ConfigSchema>(definition: PluginDef
           },
         });
       }
-      return Promise.resolve();
+      return loaded;
     };
 
     return {
