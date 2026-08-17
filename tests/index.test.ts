@@ -1,6 +1,7 @@
 import { Type } from '@sinclair/typebox';
 import { describe, expect, it } from 'vitest';
 import { definePlugin, formatResult, wrapResult } from '../src/index.js';
+import { testPlugin } from '../src/test.js';
 
 describe('definePlugin — sectioned config', () => {
   it('creates a typed plugin entry with named sections', () => {
@@ -114,15 +115,13 @@ describe('register + lifecycle hooks', () => {
     });
 
     const entry = createEntry();
-    entry.hooks.onLoad?.({});
-    expect(order).toEqual(['onLoad']);
-
     // Register tool
     const registered: Record<string, (p: unknown) => Promise<unknown>> = {};
     await entry.register(
       { registerTool: (t) => (registered[t.name] = async (p) => t.execute(p, {})) },
       {},
     );
+    expect(order).toEqual(['onLoad']);
 
     // Call succeed
     const result = await registered.greet({});
@@ -177,5 +176,49 @@ describe('register + lifecycle hooks', () => {
 
     await expect(invoke?.()).rejects.toBe(hookError);
     expect(executed).toBe(false);
+  });
+
+  it('awaits async onLoad once across multiple tool calls', async () => {
+    const order: string[] = [];
+    const entry = definePlugin({
+      id: 'async-load', name: 'Async load', description: 'Loads once.', configSchema: {},
+      hooks: { onLoad: async () => { order.push('load:start'); await Promise.resolve(); order.push('load:end'); } },
+      tools: (tool) => [tool({ name: 'run', description: 'Run.', parameters: Type.Object({}), execute: () => { order.push('execute'); return 'ok'; } })],
+    })();
+    let invoke: (() => Promise<unknown>) | undefined;
+    await entry.register({ registerTool: (tool) => { invoke = () => tool.execute({}, {}) as Promise<unknown>; } }, {});
+
+    await invoke?.();
+    await invoke?.();
+    expect(order).toEqual(['load:start', 'load:end', 'execute', 'execute']);
+  });
+
+  it('propagates rejected onLoad without executing tools', async () => {
+    const loadError = new Error('load failed');
+    let executed = false;
+    let invoke: (() => Promise<unknown>) | undefined;
+    const entry = definePlugin({
+      id: 'failed-load', name: 'Failed load', description: 'Rejects loading.', configSchema: {},
+      hooks: { onLoad: async () => { throw loadError; } },
+      tools: (tool) => [tool({ name: 'run', description: 'Run.', parameters: Type.Object({}), execute: () => { executed = true; } })],
+    })();
+
+    await expect(entry.register({ registerTool: (tool) => { invoke = () => tool.execute({}, {}) as Promise<unknown>; } }, {})).rejects.toBe(loadError);
+    await expect(invoke?.()).rejects.toBe(loadError);
+    expect(executed).toBe(false);
+  });
+
+  it('uses the production initialization lifecycle in testPlugin', async () => {
+    const order: string[] = [];
+    const createEntry = definePlugin({
+      id: 'test-helper-load', name: 'Test helper load', description: 'Tests helper lifecycle.', configSchema: {},
+      hooks: { onLoad: async () => { order.push('load'); } },
+      tools: (tool) => [tool({ name: 'run', description: 'Run.', parameters: Type.Object({}), execute: () => { order.push('execute'); return 'ok'; } })],
+    });
+
+    const { tools } = testPlugin(createEntry, {});
+    await tools.run({});
+    await tools.run({});
+    expect(order).toEqual(['load', 'execute', 'execute']);
   });
 });
