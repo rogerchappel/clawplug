@@ -85,6 +85,14 @@ configSchema: {
 
 Flat schemas are normalized to a `_default` section for host manifests.
 
+## Lifecycle
+
+`entry.register(api, config)` owns plugin initialization. It calls and awaits
+`onLoad(config)` exactly once per entry before any registered tool executes.
+Later tool calls share that initialization result; if `onLoad` rejects,
+registration and tool calls reject with the same error and the implementation
+does not run. Hosts and plugin code should not call `onLoad` directly.
+
 ## Test Helpers
 
 Use `testPlugin` from `clawplug/test` to exercise tools without a full host:
@@ -96,6 +104,9 @@ import createEntry from "./plugin.js";
 const { tools } = testPlugin(createEntry, { auth: { apiKey: "test" } });
 await tools.hello({ name: "Ada" });
 ```
+
+The helper uses `entry.register`, so tests have the same initialization
+semantics as a production host.
 
 ## Development
 
