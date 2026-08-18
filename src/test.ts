@@ -1,7 +1,8 @@
 import { wrapResult, type PluginEntry } from './index.js';
 
-export function testPlugin<Config>(createEntry: () => PluginEntry<Config>, config: Config) {
+export async function testPlugin<Config>(createEntry: () => PluginEntry<Config>, config: Config) {
   const entry = createEntry();
+  await entry.hooks.onLoad?.(config);
   const tools = Object.fromEntries(
     entry.tools.map((tool) => [
       tool.name,
