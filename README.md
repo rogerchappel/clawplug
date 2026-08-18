@@ -93,7 +93,7 @@ Use `testPlugin` from `clawplug/test` to exercise tools without a full host:
 import { testPlugin } from "clawplug/test";
 import createEntry from "./plugin.js";
 
-const { tools } = testPlugin(createEntry, { auth: { apiKey: "test" } });
+const { tools } = await testPlugin(createEntry, { auth: { apiKey: "test" } });
 await tools.hello({ name: "Ada" });
 ```
 
