@@ -100,10 +100,12 @@ export function definePlugin<const S extends ConfigSchema>(definition: PluginDef
       ? { _default: (definition.configSchema as FlatConfigSchema).schema }
       : definition.configSchema as ConfigSections;
 
-    const register = (
+    const register = async (
       api: { registerTool: (tool: PluginTool<unknown, ResolveConfig<S>>) => void },
       config: ResolveConfig<S>,
     ): Promise<void> => {
+      await definition.hooks?.onLoad?.(config);
+
       for (const rawTool of rawTools) {
         api.registerTool({
           name: rawTool.name,
@@ -121,7 +123,6 @@ export function definePlugin<const S extends ConfigSchema>(definition: PluginDef
           },
         });
       }
-      return Promise.resolve();
     };
 
     return {

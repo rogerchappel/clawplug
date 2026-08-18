@@ -1,6 +1,7 @@
 import { Type } from '@sinclair/typebox';
 import { describe, expect, it } from 'vitest';
 import { definePlugin, formatResult, wrapResult } from '../src/index.js';
+import { testPlugin } from '../src/test.js';
 
 describe('definePlugin — sectioned config', () => {
   it('creates a typed plugin entry with named sections', () => {
@@ -76,6 +77,25 @@ describe('formatResult', () => {
   });
 });
 
+describe('testPlugin', () => {
+  it('awaits lifecycle initialization before making tools usable', async () => {
+    const order: string[] = [];
+    const createEntry = definePlugin({
+      id: 'test-helper', name: 'Test Helper', description: 'Helper lifecycle.', configSchema: {},
+      hooks: { onLoad: async () => { await Promise.resolve(); order.push('loaded'); } },
+      tools: (tool) => [tool({
+        name: 'status', description: 'Status.', parameters: Type.Object({}),
+        execute: () => { order.push('executed'); return 'ok'; },
+      })],
+    });
+
+    const { tools } = await testPlugin(createEntry, {});
+    expect(order).toEqual(['loaded']);
+    await tools.status({});
+    expect(order).toEqual(['loaded', 'executed']);
+  });
+});
+
 describe('register + lifecycle hooks', () => {
   it('awaits hooks in the correct order', async () => {
     const order: string[] = [];
@@ -114,15 +134,13 @@ describe('register + lifecycle hooks', () => {
     });
 
     const entry = createEntry();
-    entry.hooks.onLoad?.({});
-    expect(order).toEqual(['onLoad']);
-
     // Register tool
     const registered: Record<string, (p: unknown) => Promise<unknown>> = {};
     await entry.register(
       { registerTool: (t) => (registered[t.name] = async (p) => t.execute(p, {})) },
       {},
     );
+    expect(order).toEqual(['onLoad']);
 
     // Call succeed
     const result = await registered.greet({});
@@ -177,5 +195,42 @@ describe('register + lifecycle hooks', () => {
 
     await expect(invoke?.()).rejects.toBe(hookError);
     expect(executed).toBe(false);
+  });
+
+  it('awaits onLoad once before registering any tools', async () => {
+    const order: string[] = [];
+    let finishLoad!: () => void;
+    const loaded = new Promise<void>((resolve) => { finishLoad = resolve; });
+    const entry = definePlugin({
+      id: 'async-load', name: 'Async Load', description: 'Async initialization.',
+      configSchema: { $flat: true, schema: Type.Object({ value: Type.String() }) },
+      hooks: { onLoad: async (config) => { order.push(`load:${config.value}`); await loaded; order.push('loaded'); } },
+      tools: (tool) => [tool({ name: 'ready', description: 'Ready.', parameters: Type.Object({}), execute: () => 'ready' })],
+    })();
+
+    const registration = entry.register(
+      { registerTool: () => { order.push('registered'); } },
+      { value: 'configured' },
+    );
+    await Promise.resolve();
+    expect(order).toEqual(['load:configured']);
+    finishLoad();
+    await registration;
+    expect(order).toEqual(['load:configured', 'loaded', 'registered']);
+  });
+
+  it('propagates onLoad rejection without partial registration', async () => {
+    const registered: string[] = [];
+    const entry = definePlugin({
+      id: 'failed-load', name: 'Failed Load', description: 'Failed initialization.', configSchema: {},
+      hooks: { onLoad: async () => { throw new Error('cannot connect'); } },
+      tools: (tool) => [tool({ name: 'unavailable', description: 'Unavailable.', parameters: Type.Object({}), execute: () => 'no' })],
+    })();
+
+    await expect(entry.register(
+      { registerTool: (tool) => { registered.push(tool.name); } },
+      {},
+    )).rejects.toThrow('cannot connect');
+    expect(registered).toEqual([]);
   });
 });
