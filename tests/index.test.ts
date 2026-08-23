@@ -72,12 +72,30 @@ describe('formatResult', () => {
     expect(result.content[0]?.text).toContain('"ok"');
   });
 
+  it('represents values that JSON.stringify cannot produce as text', () => {
+    expect(formatResult(undefined).content[0]?.text).toBe('undefined');
+    expect(formatResult(42n).content[0]?.text).toBe('42');
+  });
+
   it('wrapResult is a deprecated alias', () => {
     expect(wrapResult('hi')).toEqual(formatResult('hi'));
   });
 });
 
 describe('testPlugin', () => {
+  it('returns a present string text field when a tool returns undefined', async () => {
+    const createEntry = definePlugin({
+      id: 'undefined-helper', name: 'Undefined Helper', description: 'Tests empty results.', configSchema: {},
+      tools: (tool) => [tool({
+        name: 'empty', description: 'Return no value.', parameters: Type.Object({}),
+        execute: () => undefined,
+      })],
+    });
+
+    const { tools } = await testPlugin(createEntry, {});
+    expect((await tools.empty({})).content[0]?.text).toBe('undefined');
+  });
+
   it('awaits lifecycle initialization before making tools usable', async () => {
     const order: string[] = [];
     const createEntry = definePlugin({
@@ -97,6 +115,24 @@ describe('testPlugin', () => {
 });
 
 describe('register + lifecycle hooks', () => {
+  it('returns a present string text field when a registered tool returns undefined', async () => {
+    const entry = definePlugin({
+      id: 'undefined-registered', name: 'Undefined Registered', description: 'Tests empty results.', configSchema: {},
+      tools: (tool) => [tool({
+        name: 'empty', description: 'Return no value.', parameters: Type.Object({}),
+        execute: () => undefined,
+      })],
+    })();
+    let invoke: (() => Promise<unknown>) | undefined;
+    await entry.register(
+      { registerTool: (tool) => { invoke = async () => tool.execute({}, {}); } },
+      {},
+    );
+
+    const result = await invoke?.() as { content: Array<{ text: string }> };
+    expect(result.content[0]?.text).toBe('undefined');
+  });
+
   it('awaits hooks in the correct order', async () => {
     const order: string[] = [];
     const createEntry = definePlugin({

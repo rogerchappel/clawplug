@@ -47,6 +47,10 @@ export default definePlugin({
 });
 ```
 
+Tool return values are formatted as indented JSON. Values for which `JSON.stringify`
+does not produce text use their string representation instead (for example,
+`undefined` becomes `"undefined"` and `42n` becomes `"42"`).
+
 Tool results are normalized to the OpenClaw content shape:
 
 ```json
