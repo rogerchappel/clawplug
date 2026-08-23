@@ -146,11 +146,27 @@ export function definePlugin<const S extends ConfigSchema>(definition: PluginDef
  * shape expected by the gateway.
  */
 export function formatResult(value: unknown): OpenClawResult {
+  let text: string;
+  if (typeof value === 'string') {
+    text = value;
+  } else {
+    try {
+      const json = JSON.stringify(value, null, 2);
+      text = json ?? String(value);
+    } catch {
+      try {
+        text = String(value);
+      } catch {
+        text = '[unserializable value]';
+      }
+    }
+  }
+
   return {
     content: [
       {
         type: 'text',
-        text: typeof value === 'string' ? value : JSON.stringify(value, null, 2),
+        text,
       },
     ],
   };
