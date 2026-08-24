@@ -125,7 +125,7 @@ describe('register + lifecycle hooks', () => {
     })();
     let invoke: (() => Promise<unknown>) | undefined;
     await entry.register(
-      { registerTool: (tool) => { invoke = async () => tool.execute({}, {}); } },
+      { registerTool: (tool) => { invoke = async () => tool.execute({}); } },
       {},
     );
 
@@ -173,7 +173,7 @@ describe('register + lifecycle hooks', () => {
     // Register tool
     const registered: Record<string, (p: unknown) => Promise<unknown>> = {};
     await entry.register(
-      { registerTool: (t) => (registered[t.name] = async (p) => t.execute(p, {})) },
+      { registerTool: (t) => (registered[t.name] = async (p) => t.execute(p)) },
       {},
     );
     expect(order).toEqual(['onLoad']);
@@ -225,12 +225,52 @@ describe('register + lifecycle hooks', () => {
     })();
 
     await entry.register(
-      { registerTool: (tool) => { invoke = async () => tool.execute({}, {}); } },
+      { registerTool: (tool) => { invoke = async () => tool.execute({}); } },
       {},
     );
 
     await expect(invoke?.()).rejects.toBe(hookError);
     expect(executed).toBe(false);
+  });
+
+  it('uses registration config for tool calls and errors', async () => {
+    type Config = { value: string };
+    const observed: string[] = [];
+    let invoke: ((params: unknown) => Promise<unknown> | unknown) | undefined;
+    const entry = definePlugin({
+      id: 'captured-config', name: 'Captured Config', description: 'Captures config.',
+      configSchema: { $flat: true, schema: Type.Object({ value: Type.String() }) },
+      hooks: {
+        onToolCall: (_name, _params, config: Config) => { observed.push(`call:${config.value}`); },
+        onError: (_name, _error, config: Config) => { observed.push(`error:${config.value}`); },
+      },
+      tools: (tool) => [tool({
+        name: 'configured', description: 'Read config.', parameters: Type.Object({ fail: Type.Boolean() }),
+        execute: ({ fail }: { fail: boolean }, config: Config) => {
+          observed.push(`execute:${config.value}`);
+          if (fail) throw new Error('boom');
+          return config.value;
+        },
+      })],
+    })();
+
+    await entry.register(
+      { registerTool: (tool) => { invoke = tool.execute; } },
+      { value: 'registered' },
+    );
+
+    if (false) {
+      // @ts-expect-error Registered tools do not accept caller-supplied config.
+      await invoke?.({ fail: false }, { value: 'caller' });
+    }
+
+    const result = await invoke?.({ fail: false }) as { content: Array<{ text: string }> };
+    expect(result.content[0]?.text).toBe('registered');
+    expect(observed).toEqual(['call:registered', 'execute:registered']);
+
+    observed.length = 0;
+    await expect(invoke?.({ fail: true })).rejects.toThrow('boom');
+    expect(observed).toEqual(['call:registered', 'execute:registered', 'error:registered']);
   });
 
   it('awaits onLoad once before registering any tools', async () => {
