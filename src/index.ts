@@ -44,6 +44,14 @@ export interface PluginTool<Params, Config> {
   execute(params: Params, config: Config): Promise<unknown> | unknown;
 }
 
+/** Host-facing tool. Plugin config is captured when the entry is registered. */
+export interface RegisteredPluginTool<Params> {
+  name: string;
+  description: string;
+  parameters: TSchema;
+  execute(params: Params): Promise<unknown> | unknown;
+}
+
 /** Lifecycle hook that may perform side effects. Return value is ignored. */
 type HookFn<Config, Args extends unknown[]> =
   | ((...args: Args) => void)
@@ -78,7 +86,7 @@ export interface PluginEntry<Config> {
   hooks: PluginHooks<Config>;
   tools: Array<PluginTool<unknown, Config>>;
   /** Register all tools with the host, wrapping execute() with result formatting and lifecycle hooks. */
-  register(api: { registerTool: (tool: PluginTool<unknown, Config>) => void }, config: Config): Promise<void> | void;
+  register(api: { registerTool: (tool: RegisteredPluginTool<unknown>) => void }, config: Config): Promise<void> | void;
 }
 
 export interface OpenClawResult {
@@ -101,7 +109,7 @@ export function definePlugin<const S extends ConfigSchema>(definition: PluginDef
       : definition.configSchema as ConfigSections;
 
     const register = async (
-      api: { registerTool: (tool: PluginTool<unknown, ResolveConfig<S>>) => void },
+      api: { registerTool: (tool: RegisteredPluginTool<unknown>) => void },
       config: ResolveConfig<S>,
     ): Promise<void> => {
       await definition.hooks?.onLoad?.(config);
@@ -111,13 +119,13 @@ export function definePlugin<const S extends ConfigSchema>(definition: PluginDef
           name: rawTool.name,
           description: rawTool.description,
           parameters: rawTool.parameters,
-          execute: async (params, cfg) => {
-            await definition.hooks?.onToolCall?.(rawTool.name, params as unknown, cfg);
+          execute: async (params) => {
+            await definition.hooks?.onToolCall?.(rawTool.name, params as unknown, config);
             try {
-              const result = await rawTool.execute(params as never, cfg);
+              const result = await rawTool.execute(params as never, config);
               return formatResult(result);
             } catch (err) {
-              await definition.hooks?.onError?.(rawTool.name, err, cfg);
+              await definition.hooks?.onError?.(rawTool.name, err, config);
               throw err;
             }
           },

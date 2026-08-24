@@ -89,6 +89,19 @@ configSchema: {
 
 Flat schemas are normalized to a `_default` section for host manifests.
 
+## Host Registration
+
+Pass the validated plugin config once when registering an entry. Registered
+tools capture that config, so hosts invoke them with tool parameters only:
+
+```ts
+const entry = createEntry();
+await entry.register(hostApi, { auth: { apiKey: process.env.API_KEY! } });
+```
+
+The captured config is used consistently by `onToolCall`, the tool's
+`execute` function, and `onError`; callers cannot replace it per invocation.
+
 ## Test Helpers
 
 Use `testPlugin` from `clawplug/test` to exercise tools without a full host:
