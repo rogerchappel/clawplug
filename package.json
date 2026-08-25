@@ -55,6 +55,8 @@
     "esbuild": "^0.28.1"
   },
   "engines": {
-    "node": ">=20"
-  }
+    "node": ">=20 <25",
+    "npm": ">=10 <11"
+  },
+  "packageManager": "npm@10.9.4"
 }
