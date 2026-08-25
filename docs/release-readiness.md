@@ -23,7 +23,10 @@ Use this checklist before publishing, tagging, or asking reviewers to trust the 
 - `npm run package:smoke`: `npm pack --dry-run`
 - `npm run release:check`: `npm run check && npm test && npm run build && npm run package:smoke`
 
-Run `npm run release:check` before opening a release PR. Record any skipped command and the reason in the PR body.
+Run `npm run release:check` before opening a release PR. Use npm 10.9.4 on each
+supported Node.js release (20, 22, and 24), matching CI and the
+`packageManager` declaration. Record any skipped command and the reason in the
+PR body.
 
 ## Reviewer Notes
 
