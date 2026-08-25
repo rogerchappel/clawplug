@@ -12,7 +12,8 @@ OpenClaw host while keeping tool parameters and plugin config typed in source.
 npm install clawplug @sinclair/typebox
 ```
 
-`clawplug` targets Node.js 20 and newer.
+`clawplug` supports Node.js 20, 22, and 24 with npm 10. The repository pins
+npm 10.9.4 so clean installs use the same verified lockfile implementation.
 
 ## Define a Plugin
 
@@ -115,6 +116,9 @@ await tools.hello({ name: "Ada" });
 ```
 
 ## Development
+
+Use Node.js 20, 22, or 24 and npm 10.9.4 (the version declared by
+`packageManager`). Then install and verify from the lockfile:
 
 ```sh
 npm ci
