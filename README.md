@@ -8,9 +8,21 @@ OpenClaw host while keeping tool parameters and plugin config typed in source.
 
 ## Install
 
+`clawplug` is not published to the npm registry yet. Until the first release,
+build and pack a verified checkout, then install the resulting tarball:
+
 ```sh
-npm install clawplug @sinclair/typebox
+git clone https://github.com/rogerchappel/clawplug.git
+cd clawplug
+npm ci
+npm run build
+npm pack
+npm install /absolute/path/to/clawplug/clawplug-0.1.0.tgz
 ```
+
+The tarball installs `@sinclair/typebox` as a package dependency. Do not use
+`npm install clawplug` until the package is published and the registry version
+has been verified.
 
 `clawplug` supports Node.js 20, 22, and 24 with npm 10. The repository pins
 npm 10.9.4 so clean installs use the same verified lockfile implementation.
@@ -129,8 +141,9 @@ npm run package:smoke
 npm run release:check
 ```
 
-`npm run package:smoke` runs `npm pack --dry-run` so reviewers can confirm the
-published package contains only the built output and public support files.
+`npm run package:smoke` builds and packs the package, installs the tarball in a
+temporary consumer, and exercises both `clawplug` and `clawplug/test` through
+their declared exports. It removes the tarball and temporary consumer afterward.
 
 ## Release Readiness
 
@@ -140,8 +153,8 @@ Before opening a release PR, run:
 npm run release:check
 ```
 
-The release gate type-checks source, runs the Vitest suite, builds `dist`, and
-checks the dry-run package contents.
+The release gate type-checks source, runs the Vitest suite, builds and packs
+`dist`, then exercises both public exports from an isolated tarball install.
 
 ## Limitations
 
