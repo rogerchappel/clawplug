@@ -41,9 +41,6 @@
     "url": "https://github.com/rogerchappel/clawplug/issues"
   },
   "homepage": "https://github.com/rogerchappel/clawplug#readme",
-  "dependencies": {
-    "@sinclair/typebox": "^0.34.49"
-  },
   "devDependencies": {
     "@sinclair/typebox": "^0.34.49",
     "@types/node": "^22.10.2",
