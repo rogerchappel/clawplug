@@ -24,7 +24,35 @@ try {
   }));
   execFileSync('npm', [
     'install', '--ignore-scripts', '--no-audit', '--no-fund', tarball,
+    '@sinclair/typebox',
   ], { cwd: consumer, stdio: 'inherit' });
+
+  writeFileSync(join(consumer, 'tsconfig.json'), JSON.stringify({
+    compilerOptions: {
+      module: 'NodeNext',
+      moduleResolution: 'NodeNext',
+      noEmit: true,
+      strict: true,
+      target: 'ES2022',
+    },
+    include: ['consumer.ts'],
+  }));
+  writeFileSync(join(consumer, 'consumer.ts'), `
+    import { Type } from '@sinclair/typebox';
+    import { definePlugin } from 'clawplug';
+
+    definePlugin({
+      id: 'typed-consumer',
+      name: 'Typed Consumer',
+      description: 'Typechecks the installed public declarations.',
+      configSchema: { auth: Type.Object({ token: Type.String() }) },
+      tools: () => [],
+    });
+  `);
+  execFileSync(join(repository, 'node_modules', '.bin', 'tsc'), ['--project', 'tsconfig.json'], {
+    cwd: consumer,
+    stdio: 'inherit',
+  });
 
   const smoke = `
     import assert from 'node:assert/strict';
@@ -57,7 +85,7 @@ try {
     stdio: 'inherit',
   });
   assert.ok(filename.endsWith('.tgz'));
-  console.log(`Verified installed package exports in ${consumer}`);
+  console.log(`Verified installed package declarations and exports in ${consumer}`);
 } finally {
   if (tarball) rmSync(tarball, { force: true });
   rmSync(consumer, { recursive: true, force: true });
