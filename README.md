@@ -17,12 +17,14 @@ cd clawplug
 npm ci
 npm run build
 npm pack
-npm install /absolute/path/to/clawplug/clawplug-0.1.0.tgz
+npm install /absolute/path/to/clawplug/clawplug-0.1.0.tgz @sinclair/typebox
 ```
 
-The tarball installs `@sinclair/typebox` as a package dependency. Do not use
-`npm install clawplug` until the package is published and the registry version
-has been verified.
+Install `@sinclair/typebox` explicitly in the consumer project because
+`clawplug`'s public TypeScript declarations reference its schema types while
+the package intentionally omits it from runtime dependencies. Do not use `npm
+install clawplug` until the package is published and the registry version has
+been verified.
 
 `clawplug` supports Node.js 20, 22, and 24 with npm 10. The repository pins
 npm 10.9.4 so clean installs use the same verified lockfile implementation.
@@ -141,9 +143,11 @@ npm run package:smoke
 npm run release:check
 ```
 
-`npm run package:smoke` builds and packs the package, installs the tarball in a
-temporary consumer, and exercises both `clawplug` and `clawplug/test` through
-their declared exports. It removes the tarball and temporary consumer afterward.
+`npm run package:smoke` builds and packs the package, installs the tarball and
+the documented TypeBox compile-time dependency in a temporary TypeScript
+consumer, typechecks the packed declarations, and exercises both `clawplug`
+and `clawplug/test` through their declared exports. It removes the tarball and
+temporary consumer afterward.
 
 ## Release Readiness
 

@@ -22,9 +22,10 @@ Use this checklist before publishing, tagging, or asking reviewers to trust the 
 - `npm run typecheck`: `tsc --noEmit`
 - `npm run test`: `vitest run`
 - `npm run build`: `tsup`
-- `npm run package:smoke`: build and pack a tarball, install it into an isolated
-  temporary consumer, resolve and exercise `clawplug` and `clawplug/test` from
-  that installed artifact, then remove the tarball and consumer.
+- `npm run package:smoke`: build and pack a tarball, install it with the
+  documented TypeBox dependency into an isolated temporary consumer, typecheck
+  the packed declarations, resolve and exercise `clawplug` and `clawplug/test`
+  from that installed artifact, then remove the tarball and consumer.
 - `npm run release:check`: `npm run check && npm test && npm run package:smoke`
 
 Run `npm run release:check` before opening a release PR. Use npm 10.9.4 on each
