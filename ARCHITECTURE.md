@@ -58,7 +58,7 @@ The package exposes the built main module and `clawplug/test` helper through
 `package.json`. `tsup` builds the TypeScript source; `npm run typecheck` checks
 strict TypeScript compilation, and Vitest runs the tests. `npm run
 package:smoke` exercises the packed package, while `npm run release:check`
-combines typecheck, tests, and that package smoke check. The checked-in CI
+combines the `check` script, tests, and package smoke check. The checked-in CI
 workflow runs the release check on pull requests and pushes to `main`.
 
 ## Other repository tooling
@@ -66,4 +66,9 @@ workflow runs the release check on pull requests and pushes to `main`.
 The current repository has a source-level API and test helper. A generator,
 CLI runtime, adapter integration, and watch mode appear as planned items in
 `TASKS.md`; they are not implemented by the current `src/` files and this
-document does not describe them as available behavior.
+document does not describe them as available behavior. The checklist in
+`TASKS.md` still labels core API, config support, lifecycle hooks, testing
+utilities, and architecture documentation as unfinished even though the
+corresponding implementation and this guide are present. Treat those checkboxes
+as stale planning status; verify against the source before using them to infer
+missing functionality.
