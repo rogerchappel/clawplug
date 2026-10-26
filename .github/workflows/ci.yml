@@ -18,5 +18,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: npm
       - run: npm install --global npm@10.9.4
+      - name: Verify npm matches package.json engine
+        run: node -e 'const {engines}=require("./package.json"); const actual=Number(process.versions.npm?.split(".")[0]); const match=engines.npm.match(/^(>=)(\d+)\s+(<)(\d+)$/); if (!match || actual < Number(match[2]) || actual >= Number(match[4])) { console.error(`npm ${process.versions.npm} does not satisfy ${engines.npm}`); process.exit(1); }'
       - run: npm ci
       - run: npm run release:check
