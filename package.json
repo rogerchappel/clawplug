@@ -24,7 +24,8 @@
     "test": "vitest run",
     "check": "tsc --noEmit",
     "package:smoke": "node scripts/package-smoke.mjs",
-    "release:check": "npm run check && npm test && npm run package:smoke"
+    "release:check": "npm run check && npm test && npm run package:smoke",
+    "check:node-engine": "node scripts/check-node-engine.mjs"
   },
   "keywords": [
     "openclaw",
