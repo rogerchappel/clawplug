@@ -127,7 +127,8 @@ import { testPlugin } from "clawplug/test";
 import createEntry from "./plugin.js";
 
 const { tools } = await testPlugin(createEntry, { auth: { apiKey: "test" } });
-await tools.hello({ name: "Ada" });
+const result = await tools.hello({ name: "Ada" });
+console.assert(result.text === "Hello, Ada!");
 ```
 
 ## Development
