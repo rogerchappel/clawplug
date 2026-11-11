@@ -19,7 +19,7 @@ jobs:
           cache: npm
       - run: npm install --global npm@10.9.4
       - name: Verify npm matches package.json engine
-        run: node -e 'const {engines}=require("./package.json"); const actual=Number(process.versions.npm?.split(".")[0]); const match=engines.npm.match(/^(>=)(\d+)\s+(<)(\d+)$/); if (!match || actual < Number(match[2]) || actual >= Number(match[4])) { console.error(`npm ${process.versions.npm} does not satisfy ${engines.npm}`); process.exit(1); }'
+        run: node -e 'const { engines } = require("./package.json"); const actual = process.env.npm_config_user_agent?.match(/\bnpm\/(\S+)/)?.[1]; const match = engines.npm.match(/^(>=)(\d+)\s+(<)(\d+)$/); const version = Number(actual?.split(".")[0]); if (!match || !Number.isFinite(version) || version < Number(match[2]) || version >= Number(match[4])) { console.error(`npm ${actual ?? "unknown"} does not satisfy ${engines.npm}`); process.exit(1); }'
       - run: npm ci
       - run: npm run check:node-engine
       - run: npm run release:check
